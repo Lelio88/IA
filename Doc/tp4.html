@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TP4 — Réseaux de Neurones (Perceptron, Gradient, MLP)</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --card: #0b1220;
+        --accent: #60a5fa;
+        --muted: #94a3b8;
+        --glass: rgba(255, 255, 255, 0.05);
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: #f1f5f9;
+        font-family: Inter, system-ui, sans-serif;
+      }
+      .container {
+        max-width: 1100px;
+        margin: auto;
+        padding: 24px;
+      }
+      h1,
+      h2,
+      h3 {
+        color: #fff;
+      }
+      h1 {
+        font-size: 1.8rem;
+        margin-bottom: 0;
+      }
+      p.lead {
+        color: var(--muted);
+      }
+      nav {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 18px 0;
+      }
+      nav a {
+        color: var(--muted);
+        text-decoration: none;
+        padding: 8px 12px;
+        border-radius: 8px;
+        background: var(--glass);
+      }
+      nav a.active {
+        background: linear-gradient(
+          90deg,
+          rgba(96, 165, 250, 0.15),
+          rgba(96, 165, 250, 0.05)
+        );
+        color: var(--accent);
+      }
+      .card {
+        background: var(--card);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      }
+      pre {
+        background: #2e4c86;
+        padding: 14px;
+        border-radius: 8px;
+        overflow: auto;
+        color: #e2e8f0;
+        font-family: ui-monospace, monospace;
+        font-size: 0.9rem;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 10px;
+      }
+      th,
+      td {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 6px 8px;
+        text-align: left;
+      }
+      th {
+        background: rgba(255, 255, 255, 0.05);
+      }
+      footer {
+        margin-top: 20px;
+        color: var(--muted);
+        font-size: 0.9rem;
+        text-align: center;
+      }
+      @media (max-width: 900px) {
+        nav {
+          overflow: auto;
+        }
+      }
+      header nav {
+        margin-bottom: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <nav>
+        <a href="index.html">TP1</a>
+        <a href="tp2.html">TP2</a>
+        <a href="tp3.html">TP3</a>
+        <a href="tp4.html">TP4</a>
+      </nav>
+    </header>
+    <div class="container">
+      <header>
+        <h1>
+          TP4 — Réseaux de Neurones : Perceptron, Descente de Gradient & MLP
+        </h1>
+        <p class="lead">
+          Comprendre la logique du perceptron, de la régression logistique
+          (descente de gradient), et du réseau de neurones multicouche (MLP).
+        </p>
+      </header>
+
+      <nav>
+        <a href="#objectif" class="active">Objectif</a>
+        <a href="#import">Importation</a>
+        <a href="#data">Données</a>
+        <a href="#perceptron">Perceptron</a>
+        <a href="#gradient">Descente de Gradient</a>
+        <a href="#frontiere">Frontière</a>
+        <a href="#mlp">MLP</a>
+        <a href="#comparaison">Comparaison</a>
+        <a href="#conclusion">Conclusion</a>
+      </nav>
+
+      <section class="card" id="objectif">
+        <h2>🎯 Objectif</h2>
+        <p>
+          Étudier le fonctionnement des réseaux de neurones à travers trois
+          approches : le <strong>Perceptron</strong>, la
+          <strong
+            >Descente de Gradient appliquée à la régression logistique</strong
+          >, et le <strong>MLP (Multilayer Perceptron)</strong>. Le but est de
+          comprendre comment ces modèles séparent les classes et apprennent les
+          frontières de décision.
+        </p>
+      </section>
+
+      <section class="card" id="import">
+        <h2>⚙️ 1. Importation des bibliothèques</h2>
+        <pre><code>import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.datasets import make_classification, make_moons, load_digits
+from sklearn.preprocessing import add_dummy_feature
+from sklearn.linear_model import Perceptron
+from sklearn.model_selection import train_test_split
+from sklearn.neural_network import MLPClassifier</code></pre>
+        <p>
+          On importe les modules nécessaires : génération de données,
+          apprentissage supervisé, visualisation et réseau de neurones.
+        </p>
+      </section>
+
+      <section class="card" id="data">
+        <h2>📊 2. Génération et affichage des données</h2>
+        <pre><code>x, y = make_classification(
+    n_samples=1000, n_features=2, n_informative=2, n_redundant=0,
+    n_clusters_per_class=1, random_state=26) # Génère un dataset de classification binaire
+
+plt.scatter(x[:,0], x[:,1], c=y, cmap=plt.cm.Paired) # Visualisation des données  x[:,0] correspond à la 1ère feature, [x[:,1] à la 2ème
+plt.title("Données générées (2 classes)")
+plt.show()</code></pre>
+      <img src="TP4_1.jpg">
+        <p>
+          <strong>make_classification</strong> crée un jeu de données binaire,
+          idéal pour visualiser les frontières linéaires.
+        </p>
+      </section>
+
+      <section class="card" id="perceptron">
+        <h2>🌱 3. Entraînement du Perceptron</h2>
+        <pre><code>X = add_dummy_feature(x)
+clf = Perceptron(tol=1e-3, max_iter=1000, random_state=0) # Initialisation du perceptron qui cherche une séparation linéaire
+clf.fit(X, y)
+w1 = clf.coef_[0].copy()</code></pre>
+        <p>
+          Le perceptron ajuste ses poids pour séparer les classes. On ajoute un
+          biais avec <code>add_dummy_feature</code>.
+        </p>
+      </section>
+
+      <section class="card" id="gradient">
+        <h2>🧮 4. Descente de Gradient (Régression Logistique)</h2>
+        <h3>Fonction sigmoïde</h3>
+        <pre><code>def sigmoid(z): # Fonction sigmoïde pour la régression logistique sert a convertir les scores en probabilités
+    return 1 / (1 + np.exp(-z))</code></pre>
+        <h3>Implémentation de la descente de gradient</h3>
+        <pre><code>def batch_logistic_regression_gradient_descent(X, y, alpha=1, w=0, n=0, n_iterations=10): # Descente de gradient pour régression logistique
+    for epoch in range(n_iterations):
+        for j in range(n):
+            xi = X[j]
+            yi = y[j]
+            z = np.dot(w, xi)
+            pred = sigmoid(z)
+            grad = xi * (pred - yi)
+            w = w - alpha * grad
+    return w</code></pre>
+        <p>
+          Chaque itération ajuste les poids pour minimiser l’erreur. Le modèle
+          devient probabiliste.
+        </p>
+      </section>
+
+      <section class="card" id="frontiere">
+        <h2>✏️ 5. Tracé des frontières de décision</h2>
+        <pre><code>def plot_batch_frontiere(w, X, label, color): #fonction pour tracer la frontiere de decision
+    X_plot = X[:, 1:3]
+    x_min, x_max = X_plot[:,0].min()-1, X_plot[:,0].max()+1
+    x1 = np.linspace(x_min, x_max, 200)
+    if abs(w[2]) > 1e-8:
+        x2 = -(w[0] + w[1]*x1) / w[2]
+        plt.plot(x1, x2, color=color, label=label)
+    else:
+        plt.axvline(x=-w[0]/(w[1]+1e-12), color=color, label=label)</code></pre>
+        <p>
+          On visualise les droites obtenues par le perceptron et la régression
+          logistique sur le même graphe.
+        </p>
+        <pre><code>plt.figure()
+plt.scatter(X[:, 1], X[:, 2], c=y, edgecolor='k')
+plot_batch_frontiere(w1, X, 'perceptron', 'b')
+plot_batch_frontiere(w2, X, 'batch logistic regression', 'g')
+plt.legend()
+plt.show()</code></pre>
+
+        <img src="TP4_2.jpg">
+        <h4>5. variante plus simple frontières de décision</h4>
+        <pre><code>def plot_batch_frontiereVariant(w, X, label, color): #fonction pour tracer la frontiere de decision mais une variante plus simple
+    x_min, x_max = X[:,1].min(), X[:,1].max()
+    x1 = np.linspace(x_min, x_max, 100)
+    x2 = -(w[0] + w[1]*x1)/w[2]
+    plt.plot(x1, x2, label=label)
+</code></pre>
+      </section>
+
+      <section class="card" id="mlp">
+        <h2>⚔️ 6. Réseau de Neurones Multicouche (MLP)</h2>
+        <pre><code>X, y = make_moons(n_samples=200, noise=0.25, random_state=42) # Données en forme de croissant (non linéaires)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3) # Séparation en train/test permet d'évaluer la généralisation
+
+mlp = MLPClassifier(hidden_layer_sizes=(10,), solver='lbfgs',
+                    activation='relu', max_iter=500, random_state=0) # Initialisation du MLP avec 10 neurones dans une couche cachée
+mlp.fit(X_train, y_train) # Entraînement du MLP
+print("Score entraînement :", mlp.score(X_train, y_train))  # Évaluation sur les données d'entraînement
+print("Score test :", mlp.score(X_test, y_test))</code></pre>
+       <img src="TP4_4.jpg">
+        <p>
+          Le <strong>MLP</strong> apprend des frontières non linéaires.
+          <code>hidden_layer_sizes</code> contrôle la taille du réseau.
+        </p>
+      </section>
+
+      <section class="card" id="comparaison">
+        <h2>🔍 7. Comparaison de plusieurs architectures</h2>
+        <pre><code>
+          # Tester différentes tailles de réseau de neurones ce qui permet de voir l'impact de la complexité du modèle
+    for n in range(10,100,10): 
+      mlp = MLPClassifier(hidden_layer_sizes=(n, n), solver='lbfgs',
+                        activation='relu', max_iter=500, random_state=0) # MLP avec 2 couches cachées de n neurones chacune
+      mlp.fit(X_train, y_train) # Entraînement du MLP
+      print(f"{n} neurones × 2 couches — Test score: {mlp.score(X_test, y_test):.3f}")</code></pre>
+      <img src="TP4_3.jpg">
+        <p>
+          Plus le réseau est profond, plus il peut apprendre des formes
+          complexes — mais risque de sur-apprentissage.
+        </p>
+      </section>
+
+      <section class="card" id="conclusion">
+        <h2>🧠 8. Conclusion comparative</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Modèle</th>
+              <th>Type</th>
+              <th>Avantages</th>
+              <th>Limites</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Perceptron</td>
+              <td>Linéaire</td>
+              <td>Simple, rapide</td>
+              <td>Ne sépare pas les formes non linéaires</td>
+            </tr>
+            <tr>
+              <td>Descente de gradient</td>
+              <td>Linéaire (probabiliste)</td>
+              <td>Donne une probabilité d’appartenance</td>
+              <td>Ne capture pas les formes complexes</td>
+            </tr>
+            <tr>
+              <td>MLP</td>
+              <td>Non linéaire</td>
+              <td>Frontières complexes, flexible</td>
+              <td>Coût de calcul plus élevé</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <footer>
+        <p>
+          Créé automatiquement — version web du TP4 Réseaux de Neurones.<br />Souhaitez-vous
+          une version interactive (Colab / Notebook) ou export PDF ?
+        </p>
+      </footer>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>TP — Régression linéaire & polynomiale</title>
+    <meta
+      name="description"
+      content="Documentation didactique : équation normale, descente de gradient, sklearn, exemples en Python."
+    />
+    <!-- Simple modern styling -->
+    <style>
+      :root {
+        --bg: #0f172a;
+        --card: #7fa1e7;
+        --accent: #ff8c42;
+        --muted: #9aa4b2;
+        --glass: rgba(255, 255, 255, 0.04);
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+          Roboto, "Helvetica Neue", Arial;
+      }
+      body {
+        background: linear-gradient(180deg, #071029 0%, #081022 100%);
+        color: #e6eef6;
+        padding: 24px;
+      }
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      .logo {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #1f2937, #111827);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+      }
+      h1 {
+        margin: 0;
+        font-size: 1.6rem;
+      }
+      p.lead {
+        margin: 6px 0 0;
+        color: var(--muted);
+      }
+      nav {
+        display: flex;
+        gap: 8px;
+        margin: 18px 0;
+      }
+      nav a {
+        padding: 8px 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        color: var(--muted);
+        background: var(--glass);
+        font-size: 0.9rem;
+      }
+      nav a.active {
+        background: linear-gradient(
+          90deg,
+          rgba(255, 140, 66, 0.12),
+          rgba(255, 140, 66, 0.06)
+        );
+        color: var(--accent);
+        border: 1px solid rgba(255, 140, 66, 0.08);
+      }
+      main {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 20px;
+      }
+      
+      .card {
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.02),
+          rgba(255, 255, 255, 0.01)
+        );
+        border-radius: 12px;
+        padding: 18px;
+        box-shadow: 0 6px 20px rgba(2, 6, 23, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.03);
+      }
+      .sidebar .card {
+        position: sticky;
+        top: 24px;
+      }
+      h2 {
+        margin-top: 0;
+        color: #fff;
+      }
+      pre {
+        background: #2e4c86;
+        padding: 14px;
+        border-radius: 8px;
+        overflow: auto;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono",
+          "Segoe UI Mono";
+        font-size: 0.88rem;
+      }
+      code {
+        color: #e6eef6;
+        
+      }
+      .btn {
+        display: inline-block;
+        padding: 8px 12px;
+        border-radius: 10px;
+        text-decoration: none;
+        background: var(--accent);
+        color: #081022;
+        font-weight: 600;
+      }
+      footer {
+        margin-top: 20px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .legend {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+      .dot.n {
+        background: #ff4b4b;
+      }
+      .dot.g {
+        background: #10b981;
+      }
+      .dot.o {
+        background: #f59e0b;
+      }
+      /* responsive */
+      @media (max-width: 900px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+        nav {
+          overflow: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="logo">TP</div>
+        <div>
+          <h1>TP — Régression linéaire & polynomiale</h1>
+          <p class="lead">
+            Documentation didactique prête pour ton rapport / cahier de TP. Code
+            Python inclus — équation normale, descente de gradient, sklearn.
+          </p>
+        </div>
+        <nav>
+        <a href="index.html">TP1</a>
+        <a href="tp2.html">TP2</a>
+        <a href="tp3.html">TP3</a>
+        <a href="tp4.html">TP4</a>
+      </nav>
+      </header>
+
+      <nav>
+        <a class="active" href="#overview">Résumé</a>
+        <a href="#data">Génération données</a>
+        <a href="#normal">Équation normale</a>
+        <a href="#gd">Descente de gradient</a>
+        <a href="#poly">Régression polynomiale</a>
+        <a href="#analysis">Analyse</a>
+      </nav>
+
+      <main>
+        <section>
+          <article class="card" id="overview">
+            <h2>🎯 Objectif</h2>
+            <p>
+              Comprendre et implémenter : équation normale, descente de
+              gradient, et régression polynomiale (avec sklearn). Chaque section
+              contient le principe mathématique, un exemple de code et des
+              remarques pratiques.
+            </p>
+
+            <h3 id="data">1) Génération du jeu de données</h3>
+            <p>
+              On utilise <code>sklearn.datasets.make_regression</code> pour
+              créer des données linéaires bruitées.
+            </p>
+            <pre><code># Exemple de génération
+from sklearn.datasets import make_regression
+import matplotlib.pyplot as plt
+import numpy as np
+
+ # Génère des données linéaires qui permet de tester les modèles
+x, y = make_regression(n_samples=100, n_features=1, noise=10, bias=30, random_state=42)
+plt.scatter(x, y) # Affichage des points
+plt.title("Données générées (x, y)") # Titre du graphique
+plt.show() # Affichage du graphique
+
+</code></pre>
+<img src="TP1_1.jpg">
+
+
+            <h3 id="normal">2) Équation normale (solution analytique)</h3>
+            <p>
+              Formule : <code>w = (X^T X)^{-1} X^T y</code>. Ajouter une colonne
+              de 1 pour le biais.
+            </p>
+            <pre><code># Ajout du biais et résolution analytique
+from sklearn.preprocessing import add_dummy_feature
+X = add_dummy_feature(x) # Ajoute une colonne de 1 pour le biais
+w = np.linalg.inv(X.T @ X) @ X.T @ y # Calcul des poids avec l'équation normale
+plt.figure() # Nouvelle figure pour le graphique
+x_line=np.linspace(np.min(X),np.max(X),2) # Ligne pour le tracé de la droite
+y_line=w[0]+w[1]*x_line # Calcul des y correspondants
+plt.plot(x_line,y_line,color="red",label="Équation normale (solution analytique",linestyle="-") # Tracé de la droite de régression
+
+plt.scatter(x,y)
+plt.show()
+</code></pre>
+<img src="TP1_2.jpg">
+
+
+
+            <h3 id="gd">3) Descente de gradient (batch)</h3>
+            <p>
+              Coût : <code>J(w)=1/(2m)||Xw-y||^2</code>. Mise à jour :
+              <code>w := w - alpha * (1/m) X^T(Xw-y)</code>.
+            </p>
+            <pre><code># Descente de gradient simple
+alpha = 0.01 # alpha = taux d'apprentissage
+n_epoch = 1000 # Nombre d'itérations
+w = np.zeros(2) # Initialisation des poids
+
+# Possibilité d'initialiser avec des valeurs aléatoires
+  #np.random.seed(42)
+  #w = np.random.randn(2, )  # Initialiser les poids avec des valeurs aléatoires
+
+for epoch in range(n_epoch): # Boucle d'entraînement
+    grad = (1/len(x)) * X.T @ (X @ w - y) # Calcul du gradient
+    w = w - alpha * grad # Mise à jour des poids
+</code></pre>
+            <h4>Variante avec Sklearn</h4>
+            <pre><code>from sklearn.linear_model import SGDRegressor
+rng=np.random.RandomState(42) 
+reg=SGDRegressor(max_iter=1000,eta0=0.01,random_state=rng)
+reg.fit(x,y)
+print(np.array([reg.intercept_[0],reg.coef_[0]]))</code></pre>
+
+<h5>droite de régression visuel </h5>
+
+<pre><code>x_line=np.linspace(np.min(X),np.max(X)) # Ligne pour le tracé de la droite
+y_line=w[0]+w[1]*x_line # Calcul des y correspondants
+plt.plot(x_line,y_line,color="green",label="droite de régression",linestyle="-")  # Tracé de la droite de régression
+plt.scatter(x,y)
+
+plt.show()</code></pre>
+<img src="TP1_2.jpg">
+
+            <h3 id="poly">4) Régression polynomiale</h3>
+            <p>
+              Transformer les features :
+              <code>PolynomialFeatures(degree=d)</code>, puis appliquer une
+              régression linéaire.
+            </p>
+            <pre><code>from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+x, y = make_regression(n_samples=100, n_features=1, noise=10, bias=30,random_state=42) # Génère des données linéaires avec bruit
+
+y=0.5*y**2+y+2 # Transformation non-linéaire des données
+plt.scatter(x,y)
+plt.show()
+</code></pre>
+
+<img src="TP1_3.jpg">
+<pre><code>
+poly = PolynomialFeatures(degree=2, include_bias=False) # Transformation polynomiale de degré 2
+x_poly = poly.fit_transform(x) # Appliquer la transformation aux données
+reg = LinearRegression() # Régression linéaire sur les features polynomiales
+reg.fit(x_poly, y) # Entraînement du modèle
+x_line=np.linspace(np.min(x),np.max(x),200).reshape(200,1) # Ligne pour le tracé
+x_line_poly=poly_f.fit_transform(x_line) # Transformation polynomiale de la ligne
+y_line=sgd_reg.predict(x_line_poly) # Prédiction des y correspondants
+
+plt.plot(x_line,y_line,color="orange",linestyle="-") # Tracé de la courbe de régression polynomiale
+plt.scatter(x,y)
+plt.show()
+
+</code></pre>
+<img src="TP1_4.jpg">
+
+
+            <h3 id="analysis">5) Résumé comparatif & bonnes pratiques</h3>
+            <ul>
+              <li>
+                Équation normale : solution exacte, bonne pour petits jeux.
+              </li>
+              <li>
+                Descente de gradient : scalable, nécessite réglage du
+                learning-rate.
+              </li>
+              <li>
+                Polynômes : puissants mais attention à l'overfitting —
+                cross-validation & régularisation recommandées.
+              </li>
+            </ul>
+
+            <p style="margin-top: 10px">
+              <strong>Fichiers prêts :</strong> boutons en sidebar pour
+              copier/télécharger les scripts Python présents ici.
+            </p>
+          </article>
+
+          <article class="card" style="margin-top: 18px">
+            <h2>Exemples visuels</h2>
+            <p>
+              Les exemples statiques (images) peuvent être remplacés par des
+              graphiques interactifs (Plotly) si tu veux.
+            </p>
+            <div class="legend" style="margin-top: 10px">
+              <div class="dot n"></div>
+              <div>Équation normale</div>
+              <div style="width: 18px"></div>
+              <div class="dot g"></div>
+              <div>Descente de gradient</div>
+              <div style="width: 18px"></div>
+              <div class="dot o"></div>
+              <div>Polynomiale</div>
+            </div>
+          </article>
+        </section>
+
+        <aside class="sidebar">
+          <div class="card">
+            <h3>Actions</h3>
+            <p>
+              Copier / Télécharger les scripts ci-dessous pour exécuter
+              localement.
+            </p>
+            <button id="copyAll" class="btn" style="margin-bottom: 8px">
+              Copier tout le code
+            </button>
+            <a
+              id="downloadPy"
+              class="btn"
+              style="display: inline-block; margin-left: 8px"
+              >Télécharger .py</a
+            >
+
+            <hr
+              style="
+                border: none;
+                height: 1px;
+                background: rgba(255, 255, 255, 0.03);
+                margin: 12px 0;
+              "
+            />
+            <h4>Ressources rapides</h4>
+            <ul style="padding-left: 18px; color: var(--muted)">
+              <li>Sklearn — LinearRegression, PolynomialFeatures</li>
+              <li>Matplotlib / Plotly — visualisations</li>
+              <li>Cross-validation pour éviter l'overfitting</li>
+            </ul>
+          </div>
+
+          <div class="card" style="margin-top: 12px">
+            <h4>Script complet (sélection)</h4>
+            <pre id="script"><code># Script combiné : regression_tp.py
+import numpy as np
+from sklearn.datasets import make_regression
+from sklearn.preprocessing import add_dummy_feature, PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+import matplotlib.pyplot as plt
+
+# Génération
+x, y = make_regression(n_samples=100, n_features=1, noise=10, bias=30, random_state=42)
+
+# Équation normale
+X = add_dummy_feature(x)
+w_analytic = np.linalg.inv(X.T @ X) @ X.T @ y
+
+# Descente de gradient
+alpha = 0.01
+n_epoch = 1000
+w_gd = np.zeros(2)
+for epoch in range(n_epoch):
+    grad = (1/len(x)) * X.T @ (X @ w_gd - y)
+    w_gd = w_gd - alpha * grad
+
+# Régression polynomiale (degré 2)
+poly = PolynomialFeatures(degree=2, include_bias=False)
+x_poly = poly.fit_transform(x)
+reg = LinearRegression()
+reg.fit(x_poly, y)
+
+# Tracés
+x_line = np.linspace(np.min(x), np.max(x), 200).reshape(-1,1)
+X_line = add_dummy_feature(x_line)
+plt.scatter(x, y)
+plt.plot(x_line, w_analytic[0] + w_analytic[1]*x_line, label='Équation normale')
+plt.plot(x_line, w_gd[0] + w_gd[1]*x_line, label='Descente de gradient')
+plt.plot(x_line, reg.predict(poly.transform(x_line)), label='Polynomiale deg2')
+plt.legend()
+plt.show()
+</code></pre>
+          </div>
+        </aside>
+      </main>
+
+      <footer>
+        <div class="container">
+          <small
+            >Créé automatiquement — dis-moi si tu veux : export PDF, exécution
+            en ligne (Binder / Google Colab), ou un déploiement (Netlify /
+            Vercel).</small
+          >
+        </div>
+      </footer>
+    </div>
+
+    <!-- Small utilities: copy + download -->
+    <script>
+      const scriptText = document.getElementById("script").innerText;
+      document.getElementById("copyAll").addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(scriptText);
+          alert("Code copié dans le presse-papiers !");
+        } catch (e) {
+          prompt("Copiez manuellement :", scriptText);
+        }
+      });
+      // create downloadable .py blob
+      const dl = document.getElementById("downloadPy");
+      const blob = new Blob([scriptText], { type: "text/x-python" });
+      dl.href = URL.createObjectURL(blob);
+      dl.download = "regression_tp.py";
+    </script>
+  </body>
+</html>

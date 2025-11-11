@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TP — Classification & Machine Learning</title>
+  <style>
+    :root {--bg:#0f172a;--card:#0b1220;--accent:#60a5fa;--muted:#94a3b8;--glass:rgba(255,255,255,0.05)}
+    html,body{margin:0;padding:0;background:var(--bg);color:#f1f5f9;font-family:Inter,system-ui,sans-serif}
+    .container{max-width:1100px;margin:auto;padding:24px}
+    h1,h2,h3{color:#fff}
+    h1{font-size:1.8rem;margin-bottom:0}
+    p.lead{color:var(--muted)}
+    nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+    nav a{color:var(--muted);text-decoration:none;padding:8px 12px;border-radius:8px;background:var(--glass)}
+    nav a.active{background:linear-gradient(90deg,rgba(96,165,250,0.15),rgba(96,165,250,0.05));color:var(--accent)}
+    .card{background:var(--card);border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 8px 24px rgba(0,0,0,0.3)}
+    pre{background:#2e4c86;;padding:14px;border-radius:8px;overflow:auto;color:#e2e8f0;font-family:ui-monospace,monospace;font-size:0.9rem}
+    table{border-collapse:collapse;width:100%;margin-top:10px}
+    th,td{border:1px solid rgba(255,255,255,0.1);padding:6px 8px;text-align:left}
+    th{background:rgba(255,255,255,0.05)}
+    footer{margin-top:20px;color:var(--muted);font-size:0.9rem;text-align:center}
+    @media(max-width:900px){nav{overflow:auto}}
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>TP — Classification & Machine Learning</h1>
+      <p class="lead">Fiche de synthèse claire pour comprendre et implémenter : Régression Logistique, Naïf Bayes, K-NN, pipelines et métriques.</p>
+      <nav>
+        <a href="index.html">TP1</a>
+        <a href="tp2.html">TP2</a>
+        <a href="tp3.html">TP3</a>
+        <a href="tp4.html">TP4</a>
+      </nav>
+    </header>
+
+    <nav>
+      <a href="#intro" class="active">Objectif</a>
+      <a href="#data">Données</a>
+      <a href="#logreg">Régression logistique</a>
+      <a href="#nb">Naïf Bayes</a>
+      <a href="#knn">KNN</a>
+      <a href="#loan">Dataset réel</a>
+      <a href="#summary">Résumé</a>
+    </nav>
+
+    <section class="card" id="intro">
+      <h2>🎯 Objectif</h2>
+      <p>Comparer plusieurs algorithmes de classification supervisée : Régression Logistique, Naïf Bayes, et K-Plus Proches Voisins (KNN), sur données synthétiques et réelles.</p>
+    </section>
+
+    <section class="card" id="data">
+      <h2>⚙️ 1. Génération de données</h2>
+      <pre><code>from sklearn.datasets import make_classification
+x, y = make_classification(n_samples=1000, n_features=2,
+                           n_informative=2, n_redundant=0,
+                           n_clusters_per_class=1, random_state=26)  # Génère un dataset de classification binaire
+                          </code></pre>
+      <p><strong>make_classification()</strong> crée un dataset artificiel pour tester les modèles.</p>
+      <pre><code>plt.scatter(x[:,0], x[:,1], c=y)   # Visualisation des données [x:,0] correspond à la 1ère feature, [x:,1] à la 2ème
+ plt.show()</code></pre>
+<img src="TP2_1.jpg">
+    </section>
+
+    <section class="card" id="logreg">
+      <h2>🤖 2. Régression Logistique</h2>
+      <pre><code>from sklearn.linear_model import LogisticRegression
+model = LogisticRegression() # Initialisation du modèle
+model.fit(x, y) # Entraînement du modèle
+prediction = model.predict(x)</code></pre>
+      <p><strong>classification_report</strong> pour évaluer précision, rappel et F1-score :</p>
+      <pre><code>from sklearn.metrics import classification_report
+print(classification_report(y, prediction))
+# Affichage du rapport de classification qui permet d'évaluer les performances du modèle
+</code></pre>
+<img src="TP2_3.jpg">
+      <h3>Frontière de décision quand c'estt linéaire</h3>
+      <pre><code>def plot_decision(x, model): #fonction pour tracer la frontiere de decision pour LogisticRegression
+    plt.scatter(x[:,0], x[:,1], c=model.predict(x))
+    w0 = model.intercept_[0]
+    w1, w2 = model.coef_.T
+    c1 = -w0 / w2
+    c2 = -w1 / w2
+    xd = np.array([x[:,0].min(), x[:,0].max()])
+    y = c1 + c2 * xd
+    plt.plot(xd, y, color="red")
+    plt.show()</code></pre>
+    <img src="TP2_2.jpg">
+    </section>
+
+    <section class="card" id="nb">
+      <h2>🧮 3. Naïf Bayes (GaussianNB)</h2>
+      <pre><code>from sklearn.naive_bayes import GaussianNB
+clf = GaussianNB() # Initialisation du modèle
+clf.fit(x, y) # Entraînement du modèle
+prediction = clf.predict(x)
+print(classification_report(y, prediction)) # Évaluation des performances
+</code></pre>
+<img src="TP2_3.jpg">
+      <h3>Frontière de décision une autre facon de faire qui n'est pas un LogisticRegression</h3>
+      <pre><code>
+def plot_frontiere(x,model): #fonction pour tracer la frontiere de decision pour GaussianNB
+    plt.scatter(x[:,0],x[:,1],c=model.predict(x))
+    x1min,x1max=x[:,0].min(),x[:,0].max()
+    x2min,x2max=x[:,1].min(),x[:,1].max()
+# meshgrid cree une grille de points entre les min et max des deux dimensions
+    xx1,xx2=np.meshgrid(np.linspace(x1min,x1max,100),np.linspace(x2min,x2max,100)) #creer une grille de points
+    #ravel aplati la matrice en un vecteur
+    Z=model.predict(np.c_[xx1.ravel(),xx2.ravel()]).reshape(xx1.shape) #predire la classe pour chaque point de la grille
+    plt.contourf(xx1,xx2,Z,alpha=0.3)
+    plt.show()
+plot_frontiere(x,clf)
+
+</code></pre>
+<img src="TP2_4.jpg">
+      <p>Suppose chaque feature gaussienne indépendante — rapide et efficace.</p>
+    </section>
+
+    <section class="card" id="knn">
+      <h2>🧩 4. K-plus proches voisins (KNN)</h2>
+      <pre><code>from sklearn.model_selection import train_test_split
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25, random_state=26)
+
+# train_test_split divise les données en ensembles d'entraînement et de test ce qui permet de séparer 
+# les données pour l'entraînement et le test
+</code></pre>
+      <p>Pipeline complet : StandardScaler + KNeighborsClassifier</p>
+      <pre><code>from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+
+# un pipeline permet de chaîner plusieurs étapes de traitement
+
+knn_pipeline = make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors=5)) # Pipeline avec normalisation et KNN
+# StandardScaler normalise les features pour de meilleures performances
+
+knn_pipeline.fit(x_train, y_train) # Entraînement du pipeline
+y_pred = knn_pipeline.predict(x_test)</code></pre>
+      <h3>Évaluation</h3>
+      <pre><code>from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay 
+cm = confusion_matrix(y_test, y_pred) # Matrice de confusion
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=knn_pipeline.classes_) # Affichage de la matrice de confusion pour KNN ce 
+#qui permet de visualiser les performances du modèle
+disp.plot()
+plt.show()</code></pre>
+<img src="TP2_5.jpg">
+    </section>
+
+    <section class="card" id="loan">
+      <h2>📊 5. Application sur un vrai dataset — loan_data.csv</h2>
+      <pre><code>import pandas as pd
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+
+data = pd.read_csv('loan_data.csv') # Charger le dataset
+data['purpose'] = LabelEncoder().fit_transform(data['purpose']) #convertir la  catégories purpose en nombres
+
+X = data.drop('not.fully.paid', axis=1) # Tout les colonnes sauf la cible
+y = data['not.fully.paid'] # Target variable
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42) # Diviser en train/test ce qui permet de séparer les données pour l'entraînement et le test
+scaler = StandardScaler()
+X_train_s = scaler.fit_transform(X_train)
+X_test_s = scaler.transform(X_test)</code></pre>
+      <h3>Modèles comparés</h3>
+      <pre><code># Régression logistique
+log_reg = LogisticRegression(max_iter=1000)
+log_reg.fit(X_train_s, y_train)
+print(classification_report(y_test, log_reg.predict(X_test_s)))
+
+# Naïf Bayes
+gnb = GaussianNB()
+gnb.fit(X_train_s, y_train)
+print(classification_report(y_test, gnb.predict(X_test_s)))
+
+# KNN
+knn = KNeighborsClassifier(n_neighbors=5)
+knn.fit(X_train_s, y_train)
+print(classification_report(y_test, knn.predict(X_test_s)))</code></pre>
+<img src="TP2_6.jpg">
+    </section>
+
+    <section class="card" id="summary">
+      <h2>🧾 Résumé des éléments clés</h2>
+      <table>
+        <thead><tr><th>Élément</th><th>Rôle / Explication</th></tr></thead>
+        <tbody>
+          <tr><td>make_classification()</td><td>Crée un dataset artificiel</td></tr>
+          <tr><td>train_test_split()</td><td>Coupe les données en train/test</td></tr>
+          <tr><td>StandardScaler()</td><td>Normalise les features</td></tr>
+          <tr><td>make_pipeline()</td><td>Chaîne preprocessing et modèle</td></tr>
+          <tr><td>classification_report()</td><td>Précision, rappel, F1</td></tr>
+          <tr><td>confusion_matrix()</td><td>Tableau des erreurs</td></tr>
+          <tr><td>LabelEncoder()</td><td>Encode les catégories en nombres</td></tr>
+          <tr><td>fit() / predict()</td><td>Apprentissage et prédiction</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer>
+      <p>Créé automatiquement — version web de la fiche TP Classification & Machine Learning.<br/>Souhaitez-vous une version interactive (exécutable via Google Colab) ou export PDF ?</p>
+    </footer>
+  </div>
+</body>
+</html>

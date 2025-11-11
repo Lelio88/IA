@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TP3 — Arbres de Décision & SVM</title>
+  <style>
+    :root {--bg:#0f172a;--card:#0b1220;--accent:#60a5fa;--muted:#94a3b8;--glass:rgba(255,255,255,0.05)}
+    html,body{margin:0;padding:0;background:var(--bg);color:#f1f5f9;font-family:Inter,system-ui,sans-serif}
+    .container{max-width:1100px;margin:auto;padding:24px}
+    h1,h2,h3{color:#fff}
+    h1{font-size:1.8rem;margin-bottom:0}
+    p.lead{color:var(--muted)}
+    nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+    nav a{color:var(--muted);text-decoration:none;padding:8px 12px;border-radius:8px;background:var(--glass)}
+    nav a.active{background:linear-gradient(90deg,rgba(96,165,250,0.15),rgba(96,165,250,0.05));color:var(--accent)}
+    .card{background:var(--card);border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 8px 24px rgba(0,0,0,0.3)}
+    pre{background:#2e4c86;padding:14px;border-radius:8px;overflow:auto;color:#e2e8f0;font-family:ui-monospace,monospace;font-size:0.9rem}
+    table{border-collapse:collapse;width:100%;margin-top:10px}
+    th,td{border:1px solid rgba(255,255,255,0.1);padding:6px 8px;text-align:left}
+    th{background:rgba(255,255,255,0.05)}
+    footer{margin-top:20px;color:var(--muted);font-size:0.9rem;text-align:center}
+    @media(max-width:900px){nav{overflow:auto}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>TP3 — Arbres de Décision & SVM</h1>
+      <p class="lead">Découvrir deux modèles de classification supervisée : Arbres de Décision et Machines à Vecteurs de Support (SVM).</p>
+    <nav>
+        <a href="index.html">TP1</a>
+        <a href="tp2.html">TP2</a>
+        <a href="tp3.html">TP3</a>
+        <a href="tp4.html">TP4</a>
+      </nav>
+    </header>
+
+    <nav>
+      <a href="#intro" class="active">Objectif</a>
+      <a href="#data">Données</a>
+      <a href="#tree">Arbre de décision</a>
+      <a href="#svm">SVM</a>
+      <a href="#compare">Comparaison</a>
+      <a href="#conclusion">Conclusion</a>
+    </nav>
+
+    <section class="card" id="intro">
+      <h2>🎯 Objectif du TP</h2>
+      <p>Explorer et comparer les performances de deux modèles supervisés :</p>
+      <ul>
+        <li>Arbre de décision — modèle basé sur des seuils hiérarchiques.</li>
+        <li>SVM — modèle qui cherche l’hyperplan de séparation optimal entre classes.</li>
+      </ul>
+    </section>
+
+    <section class="card" id="data">
+      <h2>⚙️ 1. Préparation des données</h2>
+      <pre><code>from sklearn.datasets import make_blobs
+X, y = make_blobs(n_samples=300, centers=4, random_state=42) # Génération de données synthétiques</code></pre>
+      <p><strong>make_blobs</strong> génère un jeu de données synthétique à 4 groupes.</p>
+      <pre><code>def plot_data(X, y):
+    plt.scatter(X[:,0], X[:,1], c=y)
+    plt.show()</code></pre>
+    <img src="TP3_1.jpg">
+      <pre><code>from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)</code></pre>
+      <p>70 % pour l’entraînement, 30 % pour le test.</p>
+    </section>
+
+    <section class="card" id="tree">
+      <h2>🌳 2. Arbre de Décision</h2>
+      <pre><code>from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.metrics import classification_report, accuracy_score
+
+tree = DecisionTreeClassifier(max_depth=10, random_state=42) # Création de l'arbre de décision avec une profondeur maximale de 10
+tree.fit(X_train, y_train) # Entraînement de l'arbre de décision
+
+print(classification_report(y_test, tree.predict(X_test)))
+print("Accuracy:", accuracy_score(y_test, tree.predict(X_test)))</code></pre>
+<img src="TP3_2.jpg">
+      <h3>Visualisation de l’arbre</h3>
+      <pre><code>def plot_decision_tree(tree):
+    plt.figure(figsize=(12,8)) # Permet
+    plot_tree(tree, filled=True, feature_names=['x1','x2']) # feature_names pour nommer les axes
+    plt.show() # Affichage de l'arbre de décision
+  </code></pre>
+    <img src="TP3_3.jpg">
+    <pre><p>Variante</p><code>#from sklearn import tree as sk_tree
+#import graphviz
+#from IPython.display import display
+#graphviz_tree = sk_tree.export_graphviz(tree)
+#display(graphviz.Source(graphviz_tree))</code></pre>
+
+      <p>Permet d’observer les règles et seuils utilisés.</p>
+      <h3>Frontières de décision</h3>
+      <pre><code>def plot_contours(x, y, tree): #fonction pour tracer la frontiere de decision pour DecisionTreeClassifier
+    lengths, widths = np.meshgrid(
+        np.linspace(np.min(x[:,0]), np.max(x[:,0]), 100),
+        np.linspace(np.min(x[:,1]), np.max(x[:,1]), 100)
+    )
+    all = np.c_[lengths.ravel(), widths.ravel()]
+    y_pred = tree.predict(all).reshape(lengths.shape)
+    plt.contourf(lengths, widths, y_pred, alpha=0.3)
+    res = plt.scatter(x[:,0], x[:,1], c=y)
+    plt.legend(*res.legend_elements(), loc="upper right", title="Classes") # *res.legend_elements() pour recuperer les elements de la legende</code></pre>
+    <img src="TP3_4.jpg">
+  </section>
+
+    <section class="card" id="svm">
+      <h2>⚔️ 3. Support Vector Machine (SVM)</h2>
+      <pre><code>from sklearn.svm import SVM
+# SVM est un modèle puissant pour la classification
+svm = SVC(kernel='linear', C=1.0, gamma=0.05) # Initialisation du SVM avec noyau linéaire
+svm.fit(X_train, y_train)</code></pre>
+      <p><strong>kernel='linear'</strong> → séparation linéaire entre classes.<br><strong>C</strong> contrôle la régularisation, <strong>gamma</strong> la portée d’un point sur la frontière.</p>
+      <pre><code>def plot_svm_contours(x, y, svm): #fonction pour tracer la frontiere de decision pour SVC
+    lengths, widths = np.meshgrid(
+        np.linspace(np.min(x[:,0]), np.max(x[:,0]), 100),
+        np.linspace(np.min(x[:,1]), np.max(x[:,1]), 100)
+    )
+    all = np.c_[lengths.ravel(), widths.ravel()]
+    y_pred = svm.predict(all).reshape(lengths.shape)
+    plt.contourf(lengths, widths, y_pred, alpha=0.3)
+    res = plt.scatter(x[:,0], x[:,1], c=y)
+    plt.legend(*res.legend_elements(), loc="upper right", title="Classes") # *res.legend_elements() pour recuperer les elements de la legende
+    plt.show()</code></pre>
+    <img src="TP3_5.jpg">
+    </section>
+
+    <section class="card" id="compare">
+      <h2>🔍 4. Comparaison des Modèles</h2>
+      <table>
+        <thead>
+          <tr><th>Modèle</th><th>Frontière</th><th>Interprétation</th><th>Avantage</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Arbre de décision</td><td>Découpe carrée / hiérarchique</td><td>Lisible</td><td>Interprétable</td></tr>
+          <tr><td>SVM linéaire</td><td>Frontière droite</td><td>Moins explicable</td><td>Bonne généralisation</td></tr>
+          <tr><td>SVM RBF</td><td>Frontière courbe</td><td>Complexe</td><td>Gère les données non séparables</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card" id="conclusion">
+      <h2>🧠 Conclusion</h2>
+      <p>
+        L’arbre de décision est simple et visuel mais sensible au surapprentissage si trop profond.<br>
+        Le SVM, surtout avec un noyau linéaire, est robuste et généralise bien.<br>
+        Pour des frontières simples : SVM linéaire. Pour des structures plus complexes : arbre profond ou SVM RBF.
+      </p>
+    </section>
+
+    <footer>
+      <p>Version web — Documentation du TP3 : Arbres de Décision & SVM.<br/>Souhaitez-vous une version interactive (Google Colab) ou export PDF ?</p>
+    </footer>
+  </div>
+</body>
+</html>
